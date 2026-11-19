@@ -1,4 +1,6 @@
+import { writeFile } from 'node:fs/promises';
 import {
+  ObjectNotFoundError,
   UploadNotFoundError,
   type ObjectStorage,
   type PartInfo,
@@ -7,6 +9,7 @@ import {
 export class FakeStorage implements ObjectStorage {
   uploads = new Map<string, { key: string; parts: Map<number, PartInfo> }>();
   completedKeys = new Set<string>();
+  objects = new Map<string, Buffer>();
   createCount = 0;
 
   async createMultipartUpload(key: string): Promise<string> {
@@ -36,7 +39,17 @@ export class FakeStorage implements ObjectStorage {
   }
 
   async objectExists(key: string): Promise<boolean> {
-    return this.completedKeys.has(key);
+    return this.completedKeys.has(key) || this.objects.has(key);
+  }
+
+  async downloadToFile(key: string, filePath: string): Promise<void> {
+    const data = this.objects.get(key);
+    if (!data) throw new ObjectNotFoundError(key);
+    await writeFile(filePath, data);
+  }
+
+  async putObject(key: string, body: Buffer): Promise<void> {
+    this.objects.set(key, body);
   }
 
   /** Test helper: pretend the browser uploaded a part. */

@@ -1,16 +1,27 @@
+import { createWriteStream } from 'node:fs';
+import { pipeline } from 'node:stream/promises';
+import type { Readable } from 'node:stream';
 import {
   S3Client,
   CreateBucketCommand,
   HeadBucketCommand,
   HeadObjectCommand,
+  GetObjectCommand,
+  PutObjectCommand,
   CreateMultipartUploadCommand,
   UploadPartCommand,
   ListPartsCommand,
   CompleteMultipartUploadCommand,
   AbortMultipartUploadCommand,
+  type GetObjectCommandOutput,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import { UploadNotFoundError, type ObjectStorage, type PartInfo } from './objectStorage.js';
+import {
+  ObjectNotFoundError,
+  UploadNotFoundError,
+  type ObjectStorage,
+  type PartInfo,
+} from './objectStorage.js';
 
 export interface S3StorageOptions {
   endpoint: string;
@@ -126,6 +137,37 @@ export class S3Storage implements ObjectStorage {
       if (err instanceof Error && err.name === 'NoSuchUpload') return; // already gone is fine
       throw err;
     }
+  }
+
+    async downloadToFile(key: string, filePath: string): Promise<void> {
+    let res: GetObjectCommandOutput;
+    try {
+      res = await this.client.send(new GetObjectCommand({ Bucket: this.bucket, Key: key }));
+    } catch (err) {
+      if (err instanceof Error && (err.name === 'NoSuchKey' || err.name === 'NotFound')) {
+        throw new ObjectNotFoundError(key);
+      }
+      throw err;
+    }
+    if (!res.Body) throw new ObjectNotFoundError(key);
+    await pipeline(res.Body as Readable, createWriteStream(filePath));
+  }
+
+  async putObject(
+    key: string,
+    body: Buffer,
+    contentType: string,
+    cacheControl?: string,
+  ): Promise<void> {
+    await this.client.send(
+      new PutObjectCommand({
+        Bucket: this.bucket,
+        Key: key,
+        Body: body,
+        ContentType: contentType,
+        CacheControl: cacheControl,
+      }),
+    );
   }
 
   async objectExists(key: string): Promise<boolean> {

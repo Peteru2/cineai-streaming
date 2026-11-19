@@ -1,0 +1,1 @@
+export const masterKey = (videoId: string) => `uploads/${videoId}/master`;

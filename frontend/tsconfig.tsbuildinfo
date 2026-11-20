@@ -1,0 +1,1 @@
+{"root":["./src/app.tsx","./src/api.ts","./src/files.ts","./src/identity.ts","./src/main.tsx","./src/sleep.ts","./src/uploadstate.ts","./src/uploader.ts","./src/useupload.ts","./src/vite-env.d.ts","./src/xhr.ts","./test/files.test.ts","./test/identity.test.ts","./test/uploadstate.test.ts","./vite.config.ts"],"version":"6.0.3"}

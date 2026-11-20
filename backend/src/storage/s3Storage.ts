@@ -2,6 +2,8 @@ import { createWriteStream } from 'node:fs';
 import { pipeline } from 'node:stream/promises';
 import type { Readable } from 'node:stream';
 import {
+  PutBucketCorsCommand,
+  PutBucketPolicyCommand,
   S3Client,
   CreateBucketCommand,
   HeadBucketCommand,
@@ -66,6 +68,46 @@ export class S3Storage implements ObjectStorage {
     } catch {
       await this.client.send(new CreateBucketCommand({ Bucket: this.bucket }));
     }
+  }
+
+    /**
+   * Lets pages served from `origins` upload parts to, and stream from, this bucket.
+   * Only `hls/*` becomes publicly readable. Masters under `uploads/` stay private.
+   */
+  async configureBrowserAccess(origins: string[]): Promise<void> {
+    await this.client.send(
+      new PutBucketCorsCommand({
+        Bucket: this.bucket,
+        CORSConfiguration: {
+          CORSRules: [
+            {
+              AllowedOrigins: origins,
+              AllowedMethods: ['GET', 'HEAD', 'PUT'],
+              AllowedHeaders: ['*'],
+              ExposeHeaders: ['ETag'],
+              MaxAgeSeconds: 3600,
+            },
+          ],
+        },
+      }),
+    );
+
+    await this.client.send(
+      new PutBucketPolicyCommand({
+        Bucket: this.bucket,
+        Policy: JSON.stringify({
+          Version: '2012-10-17',
+          Statement: [
+            {
+              Effect: 'Allow',
+              Principal: { AWS: ['*'] },
+              Action: ['s3:GetObject'],
+              Resource: [`arn:aws:s3:::${this.bucket}/hls/*`],
+            },
+          ],
+        }),
+      }),
+    );
   }
 
   async createMultipartUpload(key: string, contentType: string): Promise<string> {

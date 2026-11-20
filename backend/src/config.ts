@@ -4,6 +4,8 @@ export interface Config {
   urlExpirySeconds: number;
   uploadsEnabled: boolean;
   allowedContentTypes: readonly string[];
+  /** Where players fetch playlists and segments. In production, the CDN's address. */
+  mediaBaseUrl: string;
 }
 
 const MB = 1024 * 1024;
@@ -15,6 +17,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     urlExpirySeconds: Number(env.URL_EXPIRY_SECONDS ?? 3600),
     uploadsEnabled: env.UPLOADS_ENABLED !== 'false', // the kill switch
     allowedContentTypes: ['video/mp4', 'video/quicktime', 'video/x-matroska', 'video/webm'],
+    mediaBaseUrl: (env.MEDIA_BASE_URL ?? 'http://127.0.0.1:9000/cineai').replace(/\/+$/, ''),
   };
 
   // S3 rules: every part except the last must be at least 5 MB,

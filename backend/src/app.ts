@@ -1,5 +1,6 @@
 import express, { type ErrorRequestHandler, type Express } from 'express';
 import { HttpError, videoRoutes, type VideoRoutesDeps } from './api/videoRoutes.js';
+import { playbackRoutes } from './api/playbackRoutes.js';
 
 export function createApp(deps?: VideoRoutesDeps): Express {
   const app = express();
@@ -9,10 +10,11 @@ export function createApp(deps?: VideoRoutesDeps): Express {
     res.json({ status: 'ok' });
   });
 
-  if (deps) {
+    if (deps) {
     app.use('/videos', videoRoutes(deps));
+    app.use('/watch', playbackRoutes({ store: deps.store, config: deps.config }));
   }
-
+  
   const onError: ErrorRequestHandler = (err, _req, res, _next) => {
     if (err instanceof HttpError) {
       res.status(err.status).json({ error: err.code, message: err.message, details: err.details });

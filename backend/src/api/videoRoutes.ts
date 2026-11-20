@@ -26,9 +26,9 @@ export class HttpError extends Error {
   }
 }
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+export const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-const wrap =
+export const wrap =
   (fn: (req: Request, res: Response) => Promise<void>): RequestHandler =>
   (req, res, next) => {
     fn(req, res).catch(next);

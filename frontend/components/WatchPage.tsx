@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { ApiError, getPlayback } from '../src/api';
+import { titleFromFilename } from '../src/files';
 import type { Playback } from '../src/uploadState';
 import { Player } from './Player';
 
@@ -24,9 +25,9 @@ export function WatchPage() {
         if (cancelled) return;
         const message =
           err instanceof ApiError && err.status === 404
-            ? 'This video does not exist.'
+            ? 'This film does not exist.'
             : err instanceof ApiError && err.code === 'not_ready'
-              ? 'This video is not ready yet. Please check back soon.'
+              ? 'This film is still being prepared. Please check back soon.'
               : err instanceof Error
                 ? err.message
                 : 'Something went wrong.';
@@ -39,15 +40,18 @@ export function WatchPage() {
   }, [id]);
 
   return (
-    <section>
+    <div className="watch">
+      <Link to="/" className="back">
+        ← All films
+      </Link>
       {view.kind === 'loading' && <p className="muted">Loading...</p>}
       {view.kind === 'error' && <p className="error">{view.message}</p>}
       {view.kind === 'ready' && (
         <>
-          <h2>{view.playback.filename}</h2>
+          <h1 className="page-title">{titleFromFilename(view.playback.filename)}</h1>
           <Player manifestUrl={view.playback.manifestUrl} posterUrl={view.playback.posterUrl} />
         </>
       )}
-    </section>
+    </div>
   );
 }

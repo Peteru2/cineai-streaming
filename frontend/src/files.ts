@@ -27,3 +27,16 @@ export function percent(done: number, total: number): number {
   if (total <= 0) return 0;
   return Math.min(100, Math.round((done / total) * 100));
 }
+
+/** A readable title from a file name: "my_pilot_v2.mp4" becomes "my pilot v2". */
+export function titleFromFilename(name: string): string {
+  const base = name.replace(/\.[^./\\]+$/, '');
+  const spaced = base.replace(/_+/g, ' ').replace(/\s+/g, ' ').trim();
+  return spaced || 'Untitled';
+}
+
+export function formatDate(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return '';
+  return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+}

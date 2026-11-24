@@ -28,6 +28,10 @@ export interface UploadState {
   totalBytes: number;
   videoId: string | null;
   playback: Playback | null;
+  /** The last in-progress status the server reported (never "failed" or "abandoned"). */
+  serverStatus: string | null;
+  /** Set when an upload picked up where an earlier attempt stopped. */
+  resumed: { stored: number; total: number } | null;
   log: LogEntry[];
   nextLogId: number;
 }
@@ -39,6 +43,8 @@ export const initialState: UploadState = {
   totalBytes: 0,
   videoId: null,
   playback: null,
+  serverStatus: null,
+  resumed: null,
   log: [],
   nextLogId: 1,
 };
@@ -48,6 +54,8 @@ export type Action =
   | { type: 'created'; videoId: string }
   | { type: 'progress'; bytes: number }
   | { type: 'phase'; phase: Phase; message: string }
+  | { type: 'serverStatus'; status: string }
+  | { type: 'resumed'; stored: number; total: number }
   | { type: 'ready'; playback: Playback }
   | { type: 'failed'; message: string }
   | { type: 'cancelled' }
@@ -68,6 +76,8 @@ export function reducer(state: UploadState, action: Action): UploadState {
         totalBytes: action.totalBytes,
         videoId: null,
         playback: null,
+        serverStatus: null,
+        resumed: null,
       };
     case 'created':
       return { ...state, videoId: action.videoId };
@@ -77,6 +87,12 @@ export function reducer(state: UploadState, action: Action): UploadState {
       return { ...state, phase: 'uploading', progressBytes: action.bytes };
     case 'phase':
       return { ...state, phase: action.phase, message: action.message };
+    case 'serverStatus':
+      // Keep the last in-progress status, so a failure can say where it happened.
+      if (action.status === 'failed' || action.status === 'abandoned') return state;
+      return { ...state, serverStatus: action.status };
+    case 'resumed':
+      return { ...state, resumed: { stored: action.stored, total: action.total } };
     case 'ready':
       return { ...state, phase: 'ready', message: 'Ready to watch.', playback: action.playback };
     case 'failed':

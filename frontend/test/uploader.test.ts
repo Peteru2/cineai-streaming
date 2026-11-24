@@ -125,15 +125,15 @@ describe('uploadParts', () => {
       putPart: async (url, _b, onProgress) => {
         calls.push(url);
         tries++;
-        if (offline) throw new PartError(null, 'Network error'); // fails only while offline
+        if (offline) throw new PartError(null, 'Network error');
         onProgress(5 * MB);
       },
       sleep: async () => {
-        if (tries >= 15) offline = false; // the connection comes back eventually
+        if (tries >= 15) offline = false;
       },
     });
     await uploadParts(file, planFor(1), deps, { maxAttempts: 3, concurrency: 1 });
-    expect(calls.length).toBeGreaterThan(3); // far more tries than the limit, yet no failure
+    expect(calls.length).toBeGreaterThan(3);
   });
 
   test('cancelling stops the upload', async () => {

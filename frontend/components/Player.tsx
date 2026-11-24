@@ -68,12 +68,12 @@ export function Player({ manifestUrl, posterUrl }: Props) {
     if (hlsRef.current) hlsRef.current.currentLevel = index; // -1 returns to automatic
   };
 
-  return (
-    <div>
+   return (
+    <div className="player">
       <video ref={videoRef} poster={posterUrl} controls playsInline className="video" />
       {error && <p className="error">{error}</p>}
       {heights.length > 0 && (
-        <div className="row">
+        <div className="player-bar">
           <label>
             Quality{' '}
             <select value={selected} onChange={(e) => choose(Number(e.target.value))}>

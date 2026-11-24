@@ -2,6 +2,7 @@ import { useCallback, useEffect, useReducer, useRef } from 'react';
 import { completeUpload, createUpload, getParts, getPlayback, getVideo, type VideoView } from './api';
 import { contentTypeOf } from './files';
 import { uploadKeyFor } from './identity';
+import { friendlyFailure } from './messages';
 import { sleep } from './sleep';
 import { initialState, reducer } from './uploadState';
 import { uploadParts, type UploadPlan } from './uploader';
@@ -80,6 +81,7 @@ export function useUpload(creatorId: string) {
         if (created.upload) {
           const stored = created.upload.uploadedParts.length;
           if (stored > 0) {
+            dispatch({ type: 'resumed', stored, total: created.upload.totalParts });
             log(`Resuming: storage already has ${stored} of ${created.upload.totalParts} parts`);
           }
 
@@ -109,17 +111,18 @@ export function useUpload(creatorId: string) {
           log('This file was already uploaded earlier; checking its status');
         }
 
-        dispatch({ type: 'phase', phase: 'processing', message: 'Processing your video...' });
-        const finished = await pollUntilDone(creatorId, videoId, signal, (status) =>
-          log(`Status: ${status}`),
-        );
+        dispatch({ type: 'phase', phase: 'processing', message: 'Preparing your film for streaming...' });
+        const finished = await pollUntilDone(creatorId, videoId, signal, (status) => {
+          dispatch({ type: 'serverStatus', status });
+          log(`Status: ${status}`);
+        });
 
         if (finished.status === 'ready') {
           dispatch({ type: 'ready', playback: await getPlayback(videoId) });
         } else {
-          const reason = finished.failureReason ?? `The video was ${finished.status}`;
-          log(`Failed: ${reason}`, true);
-          dispatch({ type: 'failed', message: `This video could not be processed: ${reason}` });
+          const reason = finished.failureReason ?? finished.status;
+          log(`Failed: ${reason}`, true); // the technical reason stays in the log
+          dispatch({ type: 'failed', message: friendlyFailure(reason) });
         }
       } catch (err) {
         if (signal.aborted) {

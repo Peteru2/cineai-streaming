@@ -8,6 +8,15 @@ export interface VideoView {
   failureReason: string | null;
 }
 
+export interface Film {
+  id: string;
+  filename: string;
+  posterUrl: string;
+  createdAt: string;
+}
+
+export const listFilms = (limit = 24) => call<{ films: Film[] }>('GET', `/watch?limit=${limit}`);
+
 export class ApiError extends Error {
   constructor(
     public readonly status: number,

@@ -122,6 +122,15 @@ export class PostgresVideoStore implements VideoStore {
     return res.rowCount === 1;
   }
 
+    /** Newest finished videos first. Only ready videos are ever returned. */
+  async listReady(limit: number): Promise<VideoRecord[]> {
+    const res = await this.pool.query<VideoRow>(
+      `SELECT * FROM videos WHERE status = 'ready' ORDER BY updated_at DESC, id LIMIT $1`,
+      [limit],
+    );
+    return res.rows.map(toRecord);
+  }
+
   async listByCreator(creatorId: string, status?: VideoStatus): Promise<VideoRecord[]> {
     const res = status
       ? await this.pool.query<VideoRow>(
